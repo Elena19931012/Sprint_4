@@ -1,27 +1,20 @@
 package com.example.tests;
 
+import com.example.pages.MainPage;
 import com.example.pages.OrderPage;
 import com.example.pages.OrderDetailsPage;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-public class OrderMakingTest {
-    private WebDriver driver;
+public class OrderMakingTest extends BaseTest {
     private OrderPage orderPage;
     private OrderDetailsPage orderDetailsPage;
 
@@ -46,7 +39,7 @@ public class OrderMakingTest {
     }
 
     // Наборы данных для теста
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "Заказ для: {0} {1}, метро: {3}, период: {6}")
     public static Collection<Object[]> testData() {
         return Arrays.asList(new Object[][]{
             {"Иван", "Иванов", "Москва, ул. Ленина, д. 1", "Лубянка", "89991234567", "12.04.2025", "сутки"},
@@ -55,45 +48,23 @@ public class OrderMakingTest {
     }
 
     @Before
+    @Override
     public void setUp() {
-        System.setProperty("webdriver.chrome.driver", "c:\\Users\\Kalken.M\\Desktop\\Temp\\3\\yandex-scooter\\drivers\\chromedriver.exe");
-        driver = new ChromeDriver();
-        driver.get("https://qa-scooter.praktikum-services.ru/order");
+        super.setUp();
+        driver.get(MainPage.BASE_URL + "order");
         orderPage = new OrderPage(driver);
         orderDetailsPage = new OrderDetailsPage(driver);
     }
 
     @Test
     public void testFullOrderFlow() {
-        // Шаг 1: Заполнение формы на первой странице
-        orderPage.enterName(name);
-        orderPage.enterSurname(surname);
-        orderPage.enterAddress(address);
-        orderPage.selectMetroStation(metroStation);
-        orderPage.enterPhone(phone);
+        // Шаг 1: Заполнение формы на первой странице и переход ко второму шагу
+        orderDetailsPage = orderPage.fillOrderFormAndContinue(name, surname, address, metroStation, phone);
 
-        // Нажатие кнопки "Далее"
-        orderPage.clickNextButton();
-
-        By headerLocator = By.xpath("//div[text()='Про аренду']");
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-        assertTrue("Проверка перехода на следующий шаг", wait.until(ExpectedConditions.visibilityOfElementLocated(headerLocator)).isDisplayed());
-
-        // Шаг 2: Проверка элементов на второй странице
-        orderDetailsPage.enterDate(date);
-        driver.findElement(By.xpath("//div[text()='Про аренду']")).click();
-        orderDetailsPage.selectRentalPeriod(rentalPeriod);
-        orderDetailsPage.selectBlackColor();
-        orderDetailsPage.enterComment("Оставьте у двери");
-
-        // Нажатие кнопки "Заказать"
-        orderDetailsPage.clickOrderButton();
-
-        // Подтверждение заказа в модальном окне
-        orderDetailsPage.confirmOrder();
+        // Шаг 2: Заполнение деталей аренды и оформление заказа
+        orderDetailsPage.fillOrderDetailsAndPlaceOrder(date, rentalPeriod, "Оставьте у двери");
 
         // Проверка текста подтверждения заказа
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'Order_Text__2broi')]")));
         String confirmationText = orderDetailsPage.getOrderConfirmationText();
         assertTrue("Проверка текста подтверждения заказа", confirmationText.contains("Номер заказа"));
 
@@ -102,10 +73,5 @@ public class OrderMakingTest {
 
         // Проверка перехода на страницу статуса заказа
         assertTrue("Проверка перехода на страницу статуса заказа", driver.getCurrentUrl().contains("track"));
-    }
-
-    @After
-    public void tearDown() {
-        driver.quit();
     }
 }
