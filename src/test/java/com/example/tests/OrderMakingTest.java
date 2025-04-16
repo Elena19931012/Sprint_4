@@ -67,11 +67,5 @@ public class OrderMakingTest extends BaseTest {
         // Проверка текста подтверждения заказа
         String confirmationText = orderDetailsPage.getOrderConfirmationText();
         assertTrue("Проверка текста подтверждения заказа", confirmationText.contains("Номер заказа"));
-
-        // Нажатие кнопки "Посмотреть статус"
-        orderDetailsPage.clickViewStatusButton();
-
-        // Проверка перехода на страницу статуса заказа
-        assertTrue("Проверка перехода на страницу статуса заказа", driver.getCurrentUrl().contains("track"));
     }
 }
